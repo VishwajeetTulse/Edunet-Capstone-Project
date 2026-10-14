@@ -277,6 +277,7 @@ def predict(request: PredictionRequest):
             "prediction_score": float(final_score),
             "original_score": float(pred_raw[0]),
             "stress_factor": float(stress_factor),
+            "thresholds": [float(t) for t in thresholds],
             "sii_index": cls,
             "risk_level": info["level"],
             "description": info["desc"],
