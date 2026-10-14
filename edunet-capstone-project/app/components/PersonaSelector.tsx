@@ -1,122 +1,155 @@
 import React from 'react';
-import { Gamepad2, GraduationCap, Trophy, User } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import type { AssessmentData } from './AssessmentForm';
 
 interface Persona {
   id: string;
   name: string;
-  icon: React.ElementType;
-  description: string;
-  data: any;
-  color: string;
+  blurb: string;
+  data: AssessmentData;
 }
 
 const PERSONAS: Persona[] = [
   {
     id: 'gamer',
-    name: 'The Gamer',
-    icon: Gamepad2,
-    description: 'High screen time, irregular sleep, sedentary.',
-    color: 'bg-purple-100 text-purple-600',
+    name: 'Late-night gamer',
+    blurb: 'Plays most evenings, sleeps badly and rarely gets outside.',
     data: {
-      age: 16,
-      sex: 1, // Male
-      hours: 10, // Extreme
-      height: 175,
-      weight: 80,
-      hr: 85,
-      systolic: 130,
-      diastolic: 85,
-      sds: 60, // Poor sleep (Higher is worse)
-      paq: 1.5, // Low activity
-      cgas: 60, // Moderate functioning
-    }
+      age: 16, sex: 1, hours: 10, height: 175, weight: 80,
+      hr: 85, systolic: 130, diastolic: 85,
+      sds: 60, paq: 1.5, cgas: 60,
+    },
   },
   {
     id: 'student',
-    name: 'The Student',
-    icon: GraduationCap,
-    description: 'High academic stress, moderate activity.',
-    color: 'bg-blue-100 text-blue-600',
+    name: 'Busy student',
+    blurb: 'Lots of screen time for school, sleeps fine, moves a little.',
     data: {
-      age: 15,
-      sex: 1, // Male
-      hours: 6,
-      height: 160,
-      weight: 55,
-      hr: 75,
-      systolic: 115,
-      diastolic: 75,
-      sds: 30, // Good sleep
-      paq: 2.5, // Average activity
-      cgas: 75, // Good functioning
-    }
+      age: 15, sex: 1, hours: 6, height: 160, weight: 55,
+      hr: 75, systolic: 115, diastolic: 75,
+      sds: 30, paq: 2.5, cgas: 75,
+    },
   },
   {
     id: 'athlete',
-    name: 'The Athlete',
-    icon: Trophy,
-    description: 'Low screen time, physically active.',
-    color: 'bg-emerald-100 text-emerald-600',
+    name: 'School athlete',
+    blurb: 'Trains most days, light phone use, gets along well with friends.',
     data: {
-      age: 17,
-      sex: 1, // Male
-      hours: 2,
-      height: 180,
-      weight: 75,
-      hr: 60,
-      systolic: 110,
-      diastolic: 70,
-      sds: 30, // Good sleep
-      paq: 4.5, // High activity
-      cgas: 90, // Excellent functioning
-    }
-  }
+      age: 17, sex: 1, hours: 2, height: 180, weight: 75,
+      hr: 60, systolic: 110, diastolic: 70,
+      sds: 30, paq: 4.5, cgas: 90,
+    },
+  },
 ];
 
+const sleepLabel = (sds: number) => (sds >= 65 ? 'Poor' : sds >= 45 ? 'Fair' : 'Good');
+const activityLabel = (paq: number) => (paq >= 4 ? 'High' : paq >= 2.5 ? 'Some' : 'Low');
+
 interface Props {
-  onSelect: (data: any) => void;
+  onSelect: (data: AssessmentData) => void;
   onCustom: () => void;
 }
 
 export default function PersonaSelector({ onSelect, onCustom }: Props) {
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight">
-          Who are we analyzing?
-        </h1>
-        <p className="text-xl text-gray-500">
-          Select a persona to quick-start, or create a custom profile.
-        </p>
-      </div>
+    <div className="rise space-y-16">
+      {/* Intro */}
+      <section className="grid md:grid-cols-[1.4fr_1fr] gap-10 items-end">
+        <div>
+          <p className="text-sm font-medium text-accent mb-4">For parents, teachers and students</p>
+          <h1 className="font-serif text-4xl sm:text-5xl leading-[1.1] font-semibold tracking-tight">
+            Is screen time starting to get in the way?
+          </h1>
+          <p className="mt-5 text-lg text-muted max-w-xl leading-relaxed">
+            Answer a few questions about sleep, activity, mood and daily screen use. We compare the
+            answers with data from more than 2,700 young people and give a rough idea of where things stand.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              onClick={onCustom}
+              className="inline-flex items-center gap-2 bg-accent hover:bg-accent-dark text-card px-6 py-3 rounded-md font-medium transition-colors"
+            >
+              Start the check
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <span className="text-sm text-faint">Takes about 2 minutes. Nothing is saved.</span>
+          </div>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {PERSONAS.map((persona) => (
-          <button
-            key={persona.id}
-            onClick={() => onSelect(persona.data)}
-            className="group relative flex flex-col items-center p-8 bg-white rounded-3xl shadow-sm border-2 border-transparent hover:border-teal-500 hover:shadow-xl transition-all duration-300"
-          >
-            <div className={`p-4 rounded-2xl mb-6 ${persona.color} group-hover:scale-110 transition-transform`}>
-              <persona.icon className="w-8 h-8" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">{persona.name}</h3>
-            <p className="text-center text-gray-500 text-sm leading-relaxed">
-              {persona.description}
-            </p>
-          </button>
-        ))}
-      </div>
+        <aside className="border border-line bg-card rounded-md p-5 text-sm">
+          <h2 className="font-medium mb-3">Handy to have nearby</h2>
+          <ul className="space-y-2 text-muted">
+            <li className="flex justify-between gap-4 border-b border-line pb-2"><span>Height and weight</span><span className="text-faint">needed</span></li>
+            <li className="flex justify-between gap-4 border-b border-line pb-2"><span>Rough daily screen hours</span><span className="text-faint">needed</span></li>
+            <li className="flex justify-between gap-4"><span>Heart rate and blood pressure</span><span className="text-faint">optional</span></li>
+          </ul>
+        </aside>
+      </section>
 
-      <div className="text-center pt-8">
-        <button
-          onClick={onCustom}
-          className="inline-flex items-center px-8 py-4 bg-white text-gray-900 rounded-full font-bold shadow-sm hover:shadow-md border border-gray-200 hover:bg-gray-50 transition-all"
-        >
-          <User className="w-5 h-5 mr-2 text-gray-400" />
-          Start from Scratch
-        </button>
-      </div>
+      {/* Sample profiles */}
+      <section>
+        <div className="flex items-baseline justify-between gap-4 border-b border-ink pb-3 mb-2">
+          <h2 className="font-serif text-2xl font-semibold">Or try a sample profile</h2>
+          <span className="text-sm text-faint hidden sm:block">You can change any answer after</span>
+        </div>
+
+        <ul>
+          {PERSONAS.map((p) => (
+            <li key={p.id} className="border-b border-line">
+              <button
+                type="button"
+                onClick={() => onSelect(p.data)}
+                className="group w-full grid grid-cols-[1fr_auto] sm:grid-cols-[1.2fr_2fr_auto] gap-x-6 gap-y-2 items-center py-5 text-left hover:bg-card transition-colors px-2 -mx-2 rounded"
+              >
+                <div>
+                  <div className="font-medium text-lg">{p.name}</div>
+                  <div className="text-sm text-muted">Age {p.data.age}</div>
+                </div>
+                <p className="text-muted text-sm sm:text-base col-span-2 sm:col-span-1 row-start-2 sm:row-start-auto">
+                  {p.blurb}
+                </p>
+                <div className="flex items-center gap-5 row-start-1 col-start-2 sm:col-start-auto">
+                  <dl className="hidden md:flex gap-5 font-mono text-[13px] text-muted">
+                    <div><dt className="text-faint">screen</dt><dd className="text-ink">{p.data.hours}h</dd></div>
+                    <div><dt className="text-faint">sleep</dt><dd className="text-ink">{sleepLabel(p.data.sds)}</dd></div>
+                    <div><dt className="text-faint">activity</dt><dd className="text-ink">{activityLabel(p.data.paq)}</dd></div>
+                  </dl>
+                  <ArrowRight className="w-5 h-5 text-faint group-hover:text-accent group-hover:translate-x-0.5 transition" />
+                </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* How it works */}
+      <section id="how" className="grid md:grid-cols-3 gap-8 border-t border-line pt-10">
+        <div>
+          <span className="font-mono text-[13px] text-faint">01</span>
+          <h3 className="font-medium mt-1 mb-2">You answer</h3>
+          <p className="text-sm text-muted leading-relaxed">
+            Age, body measurements, screen hours, sleep, activity and how things are going socially.
+            If you don&apos;t know your heart rate or blood pressure, we estimate them from how stressed you feel.
+          </p>
+        </div>
+        <div>
+          <span className="font-mono text-[13px] text-faint">02</span>
+          <h3 className="font-medium mt-1 mb-2">The model scores it</h3>
+          <p className="text-sm text-muted leading-relaxed">
+            Three gradient boosting models (LightGBM, XGBoost and CatBoost) each predict a score and
+            we average them. Training used data from the Healthy Brain Network study.
+          </p>
+        </div>
+        <div>
+          <span className="font-mono text-[13px] text-faint">03</span>
+          <h3 className="font-medium mt-1 mb-2">You see where it lands</h3>
+          <p className="text-sm text-muted leading-relaxed">
+            The score is placed on a three-band scale: low, mild or high. You also get a short note on
+            what is pushing it up or down.
+          </p>
+        </div>
+      </section>
     </div>
   );
 }

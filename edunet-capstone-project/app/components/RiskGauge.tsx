@@ -1,51 +1,42 @@
 import React from 'react';
-import { clsx } from 'clsx';
 
-interface RiskGaugeProps {
-  score: number; // 0 to 3
-  level: string;
+interface Props {
+  score: number;
+  thresholds: [number, number];
 }
 
-export default function RiskGauge({ score, level }: RiskGaugeProps) {
-  // Normalize score to 0-100% for the gauge
-  // Range is roughly 0.0 to 3.0
-  const normalizedScore = Math.min(Math.max(score / 3, 0), 1);
-  const rotation = normalizedScore * 180; // 0 to 180 degrees
+const SCALE_MAX = 2;
 
-  const getColor = (s: number) => {
-    if (s < 0.5) return 'text-emerald-500';
-    if (s < 1.5) return 'text-blue-500';
-    if (s < 2.5) return 'text-amber-500';
-    return 'text-rose-600';
-  };
-
-  const getBorderColor = (s: number) => {
-    if (s < 0.5) return 'border-emerald-500';
-    if (s < 1.5) return 'border-blue-500';
-    if (s < 2.5) return 'border-amber-500';
-    return 'border-rose-600';
-  };
-
-  const colorClass = getColor(score);
-  const borderClass = getBorderColor(score);
+// Horizontal three-band scale with a marker for the score.
+export default function RiskGauge({ score, thresholds }: Props) {
+  const [t0, t1] = thresholds;
+  const pct = (v: number) => `${(Math.min(Math.max(v, 0), SCALE_MAX) / SCALE_MAX) * 100}%`;
 
   return (
-    <div className="flex flex-col items-center justify-center relative py-6">
-      {/* Semi Circle Gauge Background */}
-      <div className="w-48 h-24 overflow-hidden relative">
-        <div className="w-48 h-48 rounded-full border-[12px] border-gray-100 absolute top-0 left-0"></div>
-        <div 
-            className={clsx("w-48 h-48 rounded-full border-[12px] absolute top-0 left-0 transition-transform duration-1000 ease-out border-b-transparent border-r-transparent border-l-transparent", borderClass)}
-            style={{ transform: `rotate(${rotation - 180}deg)` }}
-        ></div>
-      </div>
-      
-      {/* Score Text */}
-      <div className="text-center mt-2">
-        <div className={clsx("text-4xl font-extrabold", colorClass)}>
-          {level}
+    <div className="pt-8 pb-2">
+      <div className="relative">
+        {/* Marker */}
+        <div
+          className="absolute -top-7 -translate-x-1/2 flex flex-col items-center transition-[left] duration-700 ease-out"
+          style={{ left: pct(score) }}
+        >
+          <span className="font-mono text-xs bg-ink text-card px-1.5 py-0.5 rounded">{score.toFixed(2)}</span>
+          <span className="w-px h-3 bg-ink" />
         </div>
-        <p className="text-gray-400 text-sm mt-1">Severity Index: {score.toFixed(2)}</p>
+
+        <div className="flex h-3 rounded-sm overflow-hidden">
+          <div className="bg-low" style={{ width: pct(t0) }} />
+          <div className="bg-mid" style={{ width: `calc(${pct(t1)} - ${pct(t0)})` }} />
+          <div className="bg-high flex-1" />
+        </div>
+      </div>
+
+      <div className="relative h-10 mt-2 text-xs">
+        <span className="absolute left-0 text-muted">Low</span>
+        <span className="absolute -translate-x-1/2 font-mono text-faint" style={{ left: pct(t0) }}>{t0.toFixed(2)}</span>
+        <span className="absolute -translate-x-1/2 font-mono text-faint" style={{ left: pct(t1) }}>{t1.toFixed(2)}</span>
+        <span className="absolute right-0 text-muted">High</span>
+        <span className="absolute top-5 -translate-x-1/2 text-muted" style={{ left: `calc((${pct(t0)} + ${pct(t1)}) / 2)` }}>Mild</span>
       </div>
     </div>
   );

@@ -3,49 +3,48 @@
 import { useState } from "react";
 import Navbar from "./components/Navbar";
 import PersonaSelector from "./components/PersonaSelector";
-import AssessmentForm from "./components/AssessmentForm";
-import ResultsDashboard from "./components/ResultsDashboard";
+import AssessmentForm, { type AssessmentData } from "./components/AssessmentForm";
+import ResultsDashboard, { type ResultsData } from "./components/ResultsDashboard";
 import { ArrowLeft } from "lucide-react";
 
-type Step = 'selection' | 'assessment' | 'loading' | 'results';
+type Step = 'selection' | 'assessment' | 'results';
 
 export default function Home() {
   const [currentStep, setCurrentStep] = useState<Step>('selection');
-  const [formData, setFormData] = useState<any>(null);
-  const [results, setResults] = useState<any>(null);
+  const [formData, setFormData] = useState<AssessmentData | null>(null);
+  const [results, setResults] = useState<ResultsData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handlePersonaSelect = (data: any) => {
-    setFormData(data);
-    setCurrentStep('assessment');
+  const go = (step: Step) => {
+    setError(null);
+    setCurrentStep(step);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const startOver = () => {
+    setFormData(null);
+    setResults(null);
+    go('selection');
+  };
+
+  const handlePersonaSelect = (data: AssessmentData) => {
+    setFormData(data);
+    go('assessment');
   };
 
   const handleCustomStart = () => {
-    setFormData(null); // Reset to defaults in Form
-    setCurrentStep('assessment');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setFormData(null); // Form falls back to its defaults
+    go('assessment');
   };
 
-  const handleBack = () => {
-    if (currentStep === 'results') {
-      setCurrentStep('selection');
-      setFormData(null);
-      setResults(null);
-    } else if (currentStep === 'assessment') {
-      setCurrentStep('selection');
-    }
-  };
-
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: AssessmentData) => {
     setIsLoading(true);
     setError(null);
 
-    // Calculate BMI
     const bmi = parseFloat((data.weight / ((data.height / 100) ** 2)).toFixed(2));
 
-    // Construct the payload expected by the API
+    // Keys must match the raw dataset column names the backend expects
     const payload = {
       features: {
         "Basic_Demos-Age": data.age,
@@ -57,14 +56,13 @@ export default function Home() {
         "Physical-HeartRate": data.hr,
         "Physical-Systolic_BP": data.systolic,
         "Physical-Diastolic_BP": data.diastolic,
-        "SDS-SDS_Total_Raw": data.sds || 40, 
+        "SDS-SDS_Total_Raw": data.sds || 40,
         "PAQ_C-PAQ_C_Total": data.paq || 2.5,
         "CGAS-CGAS_Score": data.cgas || 75
       }
     };
 
     try {
-      // Use environment variable for API URL or fallback to localhost
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
       const response = await fetch(`${apiUrl}/predict`, {
         method: "POST",
@@ -76,78 +74,76 @@ export default function Home() {
         throw new Error("Failed to fetch prediction");
       }
 
-      const resultData = await response.json();
-      setResults(resultData);
-      setCurrentStep('results');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setResults(await response.json());
+      setFormData(data);
+      go('results');
     } catch (err) {
       console.error(err);
-      setError("Unable to connect to the analysis engine. Please ensure the backend is running.");
+      setError("We couldn't reach the prediction server. If you're running this locally, check that the backend is up on port 8000.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-teal-100 flex flex-col">
-      <Navbar />
+    <div className="min-h-screen flex flex-col">
+      <Navbar step={currentStep} onHome={startOver} />
 
-      <main className="container mx-auto px-4 flex-grow flex flex-col justify-center pt-24 pb-12">
-        
-        {/* Back Button */}
-        {currentStep !== 'selection' && (
-          <button 
-            onClick={handleBack}
-            className="mb-6 flex items-center text-gray-500 hover:text-gray-900 transition-colors font-medium"
+      <main className="flex-grow w-full max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+        {currentStep === 'assessment' && (
+          <button
+            type="button"
+            onClick={() => go('selection')}
+            className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 mr-2" />
+            <ArrowLeft className="w-4 h-4" />
             Back
           </button>
         )}
 
-        {/* Error Banner */}
         {error && (
-          <div className="bg-rose-100 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg mb-6 max-w-2xl mx-auto">
+          <div role="alert" className="border-l-4 border-high bg-card px-4 py-3 mb-6 text-sm">
             {error}
           </div>
         )}
 
-        {/* Views */}
         {currentStep === 'selection' && (
-          <PersonaSelector 
-            onSelect={handlePersonaSelect} 
-            onCustom={handleCustomStart} 
-          />
+          <PersonaSelector onSelect={handlePersonaSelect} onCustom={handleCustomStart} />
         )}
 
         {currentStep === 'assessment' && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="text-center mb-10">
-              <h2 className="text-3xl font-black text-gray-900 mb-2">Health Assessment</h2>
-              <p className="text-gray-500">Adjust the values below to match the profile.</p>
+          <div className="rise">
+            <div className="mb-8 max-w-2xl">
+              <h1 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight">A few questions</h1>
+              <p className="text-muted mt-3 leading-relaxed">
+                Go with your best guess. There are no right answers, and rough numbers are fine.
+              </p>
             </div>
-            <AssessmentForm 
-              initialData={formData} 
-              onSubmit={handleSubmit} 
-              isLoading={isLoading} 
+            <AssessmentForm
+              // Remount when the starting data changes so the form picks it up
+              key={formData ? JSON.stringify(formData) : 'blank'}
+              initialData={formData}
+              onSubmit={handleSubmit}
+              isLoading={isLoading}
             />
           </div>
         )}
 
-        {currentStep === 'results' && results && (
-          <div className="animate-in zoom-in-95 duration-500">
-             <ResultsDashboard 
-               data={results} 
-               onReset={() => {
-                 setCurrentStep('selection');
-                 setFormData(null);
-                 setResults(null);
-               }} 
-             />
-          </div>
+        {currentStep === 'results' && results && formData && (
+          <ResultsDashboard
+            data={results}
+            answers={formData}
+            onEdit={() => go('assessment')}
+            onReset={startOver}
+          />
         )}
-
       </main>
+
+      <footer className="border-t border-line">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 text-sm text-muted">
+          Trained on the Child Mind Institute Healthy Brain Network dataset.
+        </div>
+      </footer>
     </div>
   );
 }
